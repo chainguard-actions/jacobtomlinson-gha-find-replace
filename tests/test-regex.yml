@@ -1,0 +1,46 @@
+name: Test regex find and replace
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create test file with version string
+        run: |
+          echo "version: 1.2.3" > "$GITHUB_WORKSPACE/test-regex.txt"
+          echo "app_version: 1.2.3" >> "$GITHUB_WORKSPACE/test-regex.txt"
+
+      - id: action
+        uses: .
+        with:
+          find: "[0-9]+\\.[0-9]+\\.[0-9]+"
+          replace: "2.0.0"
+          include: "test-regex.txt"
+          regex: "true"
+
+      - name: Assert modifiedFiles output
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          if [ "$MODIFIED" != "1" ]; then
+            echo "FAIL: expected modifiedFiles=1, got '$MODIFIED'"
+            exit 1
+          fi
+          echo "PASS: modifiedFiles=1"
+
+      - name: Assert file content was replaced via regex
+        run: |
+          CONTENT=$(cat "$GITHUB_WORKSPACE/test-regex.txt")
+          echo "File content: $CONTENT"
+          if echo "$CONTENT" | grep -q "1\.2\.3"; then
+            echo "FAIL: old version '1.2.3' still found in file after regex replacement"
+            exit 1
+          fi
+          if ! echo "$CONTENT" | grep -q "2\.0\.0"; then
+            echo "FAIL: new version '2.0.0' not found in file after regex replacement"
+            exit 1
+          fi
+          echo "PASS: regex replacement successful"

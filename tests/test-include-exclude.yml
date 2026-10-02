@@ -1,0 +1,57 @@
+name: Test include and exclude glob patterns
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create test files in different directories
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/src" "$GITHUB_WORKSPACE/docs"
+          echo "Replace this: PLACEHOLDER" > "$GITHUB_WORKSPACE/src/main.txt"
+          echo "Replace this: PLACEHOLDER" > "$GITHUB_WORKSPACE/docs/readme.txt"
+
+      - id: action
+        uses: .
+        with:
+          find: "PLACEHOLDER"
+          replace: "REPLACED"
+          include: "src/**"
+          exclude: "docs/**"
+
+      - name: Assert modifiedFiles output
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          if [ "$MODIFIED" != "1" ]; then
+            echo "FAIL: expected modifiedFiles=1 (only src/main.txt), got '$MODIFIED'"
+            exit 1
+          fi
+          echo "PASS: modifiedFiles=1"
+
+      - name: Assert included file was replaced
+        run: |
+          CONTENT=$(cat "$GITHUB_WORKSPACE/src/main.txt")
+          echo "src/main.txt content: $CONTENT"
+          if echo "$CONTENT" | grep -q "PLACEHOLDER"; then
+            echo "FAIL: 'PLACEHOLDER' still found in src/main.txt"
+            exit 1
+          fi
+          if ! echo "$CONTENT" | grep -q "REPLACED"; then
+            echo "FAIL: 'REPLACED' not found in src/main.txt"
+            exit 1
+          fi
+          echo "PASS: included file was replaced"
+
+      - name: Assert excluded file was NOT replaced
+        run: |
+          CONTENT=$(cat "$GITHUB_WORKSPACE/docs/readme.txt")
+          echo "docs/readme.txt content: $CONTENT"
+          if ! echo "$CONTENT" | grep -q "PLACEHOLDER"; then
+            echo "FAIL: 'PLACEHOLDER' was replaced in excluded file docs/readme.txt"
+            exit 1
+          fi
+          echo "PASS: excluded file was not modified"

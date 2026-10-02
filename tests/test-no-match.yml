@@ -1,0 +1,40 @@
+name: Test find and replace with no matches
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create test file without the search string
+        run: |
+          echo "This file does not contain the target string." > "$GITHUB_WORKSPACE/test-nomatch.txt"
+
+      - id: action
+        uses: .
+        with:
+          find: "NONEXISTENT_STRING_XYZ"
+          replace: "SOMETHING"
+          include: "test-nomatch.txt"
+
+      - name: Assert modifiedFiles output is 0
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          if [ "$MODIFIED" != "0" ]; then
+            echo "FAIL: expected modifiedFiles=0, got '$MODIFIED'"
+            exit 1
+          fi
+          echo "PASS: modifiedFiles=0 as expected"
+
+      - name: Assert file content was not changed
+        run: |
+          CONTENT=$(cat "$GITHUB_WORKSPACE/test-nomatch.txt")
+          echo "File content: $CONTENT"
+          if ! echo "$CONTENT" | grep -q "This file does not contain the target string."; then
+            echo "FAIL: file content was unexpectedly changed"
+            exit 1
+          fi
+          echo "PASS: file content unchanged"
