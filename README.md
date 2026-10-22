@@ -9,6 +9,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
 | 3.0.5 | [`3.0.5`](https://github.com/chainguard-actions/jacobtomlinson-gha-find-replace/tree/3.0.5) | [`f1069b4`](https://github.com/jacobtomlinson/gha-find-replace/commit/f1069b438f125e5395d84d1c6fd3b559a7880cb5) |
+| v3 | [`v3`](https://github.com/chainguard-actions/jacobtomlinson-gha-find-replace/tree/v3) | [`2ff30f6`](https://github.com/jacobtomlinson/gha-find-replace/commit/2ff30f644d2e0078fc028beb9193f5ff0dcad39e) |
 
 ## Privacy
 
