@@ -1,0 +1,40 @@
+name: Test basic fixed-string replace
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create test files
+        run: |
+          rm -rf test-data-basic
+          mkdir -p test-data-basic/sub
+          echo "hello world" > test-data-basic/a.txt
+          echo "say hello again, hello" > test-data-basic/sub/b.txt
+          echo "nothing here" > test-data-basic/c.txt
+      - id: action
+        uses: .
+        with:
+          include: "test-data-basic/**"
+          find: "hello"
+          replace: "goodbye"
+      - name: Assert files replaced
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          cat test-data-basic/a.txt test-data-basic/sub/b.txt test-data-basic/c.txt
+          if [ "$(cat test-data-basic/a.txt)" != "goodbye world" ]; then
+            echo "FAIL: a.txt not replaced"; exit 1
+          fi
+          if [ "$(cat test-data-basic/sub/b.txt)" != "say goodbye again, goodbye" ]; then
+            echo "FAIL: sub/b.txt not replaced"; exit 1
+          fi
+          if [ "$(cat test-data-basic/c.txt)" != "nothing here" ]; then
+            echo "FAIL: c.txt unexpectedly changed"; exit 1
+          fi
+          if [ "$MODIFIED" != "2" ]; then
+            echo "FAIL: expected modifiedFiles=2"; exit 1
+          fi
+          echo "PASS"

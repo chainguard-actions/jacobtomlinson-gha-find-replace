@@ -1,0 +1,36 @@
+name: Test exclude glob
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create test files
+        run: |
+          rm -rf test-data-exclude
+          mkdir -p test-data-exclude/keep test-data-exclude/skip
+          echo "foo" > test-data-exclude/keep/a.txt
+          echo "foo" > test-data-exclude/skip/b.txt
+      - id: action
+        uses: .
+        with:
+          include: "test-data-exclude/**"
+          exclude: "test-data-exclude/skip/**"
+          find: "foo"
+          replace: "bar"
+      - name: Assert exclude respected
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          if [ "$(cat test-data-exclude/keep/a.txt)" != "bar" ]; then
+            echo "FAIL: keep/a.txt not replaced"; exit 1
+          fi
+          if [ "$(cat test-data-exclude/skip/b.txt)" != "foo" ]; then
+            echo "FAIL: skip/b.txt should be untouched"; exit 1
+          fi
+          if [ "$MODIFIED" != "1" ]; then
+            echo "FAIL: expected modifiedFiles=1"; exit 1
+          fi
+          echo "PASS"

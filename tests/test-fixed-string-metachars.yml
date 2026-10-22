@@ -1,0 +1,38 @@
+name: Test fixed string treats regex metacharacters literally
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create test files
+        run: |
+          rm -rf test-data-literal
+          mkdir -p test-data-literal
+          echo "axb" > test-data-literal/x.txt
+          echo "a.b" > test-data-literal/dot.txt
+      - id: action
+        uses: .
+        with:
+          include: "test-data-literal/**"
+          find: "a.b"
+          replace: "Z"
+          regex: "false"
+      - name: Assert literal match only
+        env:
+          MODIFIED: ${{ steps.action.outputs.modifiedFiles }}
+        run: |
+          echo "modifiedFiles: $MODIFIED"
+          echo "x.txt: $(cat test-data-literal/x.txt)"
+          echo "dot.txt: $(cat test-data-literal/dot.txt)"
+          if [ "$(cat test-data-literal/x.txt)" != "axb" ]; then
+            echo "FAIL: x.txt should not match literal 'a.b'"; exit 1
+          fi
+          if [ "$(cat test-data-literal/dot.txt)" != "Z" ]; then
+            echo "FAIL: dot.txt should be replaced"; exit 1
+          fi
+          if [ "$MODIFIED" != "1" ]; then
+            echo "FAIL: expected modifiedFiles=1"; exit 1
+          fi
+          echo "PASS"
